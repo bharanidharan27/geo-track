@@ -23,9 +23,7 @@ def on_success(metadata):
 def on_error(e):
     print(f"Error sending message: {e}")
 
-# Produce 100 messages asynchronously
-for i in range(1):
-    msg = f"asynchronous message #{i}"
+def enqueue_message(msg):
     future = producer.send(
         KAFKA_TOPIC,
         key=hostname,
@@ -33,7 +31,10 @@ for i in range(1):
     )
     future.add_callback(on_success)
     future.add_errback(on_error)
-producer.flush()
-producer.close()
-
-print("✅ Producer finished successfully.")
+    
+def enqueue_batch_messages(msgs):
+    for msg in msgs:
+        enqueue_message(msg)
+    producer.flush()
+    producer.close()
+    print("✅ Producer finished successfully.")
