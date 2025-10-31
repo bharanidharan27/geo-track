@@ -6,7 +6,7 @@ from generator.utils.region_mapper import get_topic_for_region, list_supported_r
 # from event_producer import send_event, flush
 import random
 
-def produce_region_events(region, n_parcels=10000, events_per_parcel=10):
+def produce_region_events(region, n_parcels=250_000, events_per_parcel=10):
     """Worker: generates events only for a specific region."""
     accounts, carriers = generate_fake_ids()
     total_events = n_parcels * events_per_parcel
@@ -30,7 +30,7 @@ def produce_region_events(region, n_parcels=10000, events_per_parcel=10):
     # flush()
     print(f"✅ [{region}] Done producing {total_events:,} events.")
 
-def run_parallel_generation(total_parcels=40000, events_per_parcel=10):
+def run_parallel_generation(total_parcels=1_000_000, events_per_parcel=10):
     """Spawn one process per region."""
     regions = list_supported_regions()
     parcels_per_region = total_parcels // len(regions)
@@ -47,4 +47,4 @@ def run_parallel_generation(total_parcels=40000, events_per_parcel=10):
     print("🎯 All region producers completed.")
 
 if __name__ == "__main__":
-    run_parallel_generation(total_parcels=40000, events_per_parcel=10)
+    run_parallel_generation(total_parcels=1_000_000, events_per_parcel=10)
