@@ -18,9 +18,12 @@ consumer = KafkaConsumer(
     enable_auto_commit=False,
     # consumer_timeout_ms=10000
 )
+
+# TODO: Implementation of each consumer thread handling specific topic
 consumer.subscribe(KAFKA_TOPIC_LIST)
 
 try:
+    print("Starting Kafka Consumer...")
     for message in consumer:
         topic_info = f"topic: {message.topic} ({message.partition}|{message.offset})"
         key = message.key.decode() if message.key else None
