@@ -1,0 +1,6 @@
+python-dotenv==1.2.1
+kafka-python-ng==2.2.3
+
+faker==25.0.1
+# confluent-kafka==2.5.0
+tqdm==4.66.4
