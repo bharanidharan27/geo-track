@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-KAFKA_TOPIC = "us-west"
+KAFKA_TOPIC_LIST = ["scans.us-west", "scans.us-east", "scans.us-central", "scans.us-south"]
 
 consumer = KafkaConsumer(
     bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
@@ -16,9 +16,9 @@ consumer = KafkaConsumer(
     group_id=os.getenv("KAFKA_CONSUMER_GROUP_ID"),
     auto_offset_reset="earliest",
     enable_auto_commit=False,
-    consumer_timeout_ms=10000
+    # consumer_timeout_ms=10000
 )
-consumer.subscribe([KAFKA_TOPIC])
+consumer.subscribe(KAFKA_TOPIC_LIST)
 
 try:
     for message in consumer:
