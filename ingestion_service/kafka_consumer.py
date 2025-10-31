@@ -27,7 +27,8 @@ try:
         val = message.value.decode() if message.value else None
         message_info = f"key: {key}, value={val}"
         print(f"{topic_info}, {message_info}")
-
     consumer.commit()
+except KeyboardInterrupt:
+    pass
 finally:
     consumer.close()
