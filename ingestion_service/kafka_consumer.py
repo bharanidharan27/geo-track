@@ -2,10 +2,12 @@ from kafka import KafkaConsumer
 import os
 from dotenv import load_dotenv
 
+from db.db_utils import insert_scanned_events_batch
+
 # Load environment variables from .env file
 load_dotenv()
 
-KAFKA_TOPIC = "us-west"
+KAFKA_TOPIC_LIST = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
 
 consumer = KafkaConsumer(
     bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
@@ -16,18 +18,34 @@ consumer = KafkaConsumer(
     group_id=os.getenv("KAFKA_CONSUMER_GROUP_ID"),
     auto_offset_reset="earliest",
     enable_auto_commit=False,
-    consumer_timeout_ms=10000
+    # consumer_timeout_ms=10000
 )
-consumer.subscribe([KAFKA_TOPIC])
+
+# TODO: Implementation of each consumer thread handling specific topic
+consumer.subscribe(KAFKA_TOPIC_LIST)
 
 try:
-    for message in consumer:
-        topic_info = f"topic: {message.topic} ({message.partition}|{message.offset})"
-        key = message.key.decode() if message.key else None
-        val = message.value.decode() if message.value else None
-        message_info = f"key: {key}, value={val}"
-        print(f"{topic_info}, {message_info}")
+    print("Starting Kafka Consumer...")
 
-    consumer.commit()
+    while True:
+        records = consumer.poll(timeout_ms=500, max_records=200)
+        if not records:
+            continue
+        batch_values = []
+        for tp, msgs in records.items():
+            for msg in msgs:
+                topic_info = f"topic: {msg.topic} ({msg.partition}|{msg.offset})"
+                key = msg.key.decode() if msg.key else None
+                val = msg.value.decode() if msg.value else None
+                message_info = f"key: {key}, value={val}"
+                print(f"{topic_info}, {message_info}")
+                if val:
+                    batch_values.append(val)
+        
+        if batch_values:
+            insert_scanned_events_batch(batch_values)
+            consumer.commit()
+except KeyboardInterrupt:
+    pass
 finally:
     consumer.close()
