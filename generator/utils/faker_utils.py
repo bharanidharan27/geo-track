@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 fake = Faker()
 
-regions = ["us-west", "us-east", "eu-central", "ap-south"]
+regions = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
 event_types = ["handoff", "arrival", "departure", "out_for_delivery", "delivered", "exception", "rts"]
 
 def generate_fake_ids(num_accounts=1000, num_carriers=50):
