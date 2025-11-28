@@ -1,5 +1,5 @@
 from kafka import KafkaConsumer
-import os
+import os, sys
 from dotenv import load_dotenv
 
 from db.db_utils import insert_scanned_events_batch
@@ -18,12 +18,25 @@ consumer = KafkaConsumer(
     sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
     group_id=os.getenv("KAFKA_CONSUMER_GROUP_ID"),
     auto_offset_reset="earliest",
-    enable_auto_commit=False,
-    # consumer_timeout_ms=10000
+    enable_auto_commit=False
 )
 
-# TODO: Implementation of each consumer thread handling specific topic
-consumer.subscribe(KAFKA_TOPIC_LIST)
+if len(sys.argv) != 2:
+    print("Usage: python kafka_consumer.py <topic-name>")
+    sys.exit(1)
+
+TOPIC_ID = int(sys.argv[1])
+TOPIC = KAFKA_TOPIC_LIST[TOPIC_ID]
+
+if TOPIC_ID < 0 and TOPIC_ID > 5:
+    print(f"[ERROR] Unknown topic '{TOPIC}'. Allowed: {KAFKA_TOPIC_LIST}")
+    sys.exit(1)
+
+
+print(f"[INFO] Starting consumer for topic: {TOPIC}")
+
+# consumer.subscribe(KAFKA_TOPIC_LIST)
+consumer.subscribe([TOPIC])
 
 try:
     print("Starting Kafka Consumer...")
