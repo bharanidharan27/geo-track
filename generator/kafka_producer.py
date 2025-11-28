@@ -48,13 +48,14 @@ def enqueue_batch_messages(msgs):
             continue
         enqueue_message(msg, topic)
     producer.flush()
-    print("✅ Producer finished successfully.")
+    print("Producer finished successfully.")
+# How to batch queue
 
 enqueue_batch_messages([
-    {"event_id": "8e1d5f7c-6b88-4c02-9b68-91af8b9358e9", "tracking_id": "TRK00000004", "account_id": "ffb2d85a-0915-46c4-abdd-79db475d2b9e", "carrier_id": "78ec7a3e-4ec6-4b19-8b96-a3e177b79d92", "facility_region": "aws-ap-south-1", "event_type": "out_for_delivery", "event_ts": "2025-11-09T06:18:56Z", "notes": "Arrived at facility"},
-    {"event_id": "d4c217fa-76f0-4f92-8f88-2229b3f19f95", "tracking_id": "TRK00000006", "account_id": "24cef2ee-6ce4-46e7-985b-bdf7acecaeec", "carrier_id": "725731db-38b3-448f-92e7-cd6bbdd38cab", "facility_region": "aws-us-east-2", "event_type": "out_for_delivery", "event_ts": "2025-11-21T13:22:35Z", "notes": "Departed from facility"},
-    # {"event_id": "3ba8c624-96c2-4ff0-8bd2-7282a132d5ae", "tracking_id": "TRK00000002", "account_id": "d1022aa5-3b69-47c7-a53c-48a92fa9fcf3", "carrier_id": "d0eb1769-79c2-4e35-bd3a-84a8bd4ccfe4", "facility_region": "aws-ap-southeast-1", "event_type": "created", "event_ts": "2025-11-10T23:04:15Z", "notes": "In transit to next hub"},
-    # {"event_id": "a2f4b2a0-4b51-4e5f-b4df-53e820c90e34", "tracking_id": "TRK00000003", "account_id": "71e08387-a2ba-4a2a-a45e-e2156dd3b971", "carrier_id": "b12f940b-d921-4657-bcc3-1d487dc53864", "facility_region": "aws-ap-southeast-1", "event_type": "in_transit", "event_ts": "2025-11-13T02:01:09Z", "notes": "Package delivered"}
+    {"tracking_id": "TRK00000004", "account_id": "ffb2d85a-0915-46c4-abdd-79db475d2b9e", "carrier_id": "78ec7a3e-4ec6-4b19-8b96-a3e177b79d92", "facility_region": "aws-ap-south-1", "event_type": "out_for_delivery", "event_ts": "2025-11-09T06:18:56Z", "notes": "Arrived at facility"},
+    {"tracking_id": "TRK00000006", "account_id": "24cef2ee-6ce4-46e7-985b-bdf7acecaeec", "carrier_id": "725731db-38b3-448f-92e7-cd6bbdd38cab", "facility_region": "aws-us-east-2", "event_type": "out_for_delivery", "event_ts": "2025-11-21T13:22:35Z", "notes": "Departed from facility"},
+    # {"tracking_id": "TRK00000002", "account_id": "d1022aa5-3b69-47c7-a53c-48a92fa9fcf3", "carrier_id": "d0eb1769-79c2-4e35-bd3a-84a8bd4ccfe4", "facility_region": "aws-ap-southeast-1", "event_type": "created", "event_ts": "2025-11-10T23:04:15Z", "notes": "In transit to next hub"},
+    # {"tracking_id": "TRK00000003", "account_id": "71e08387-a2ba-4a2a-a45e-e2156dd3b971", "carrier_id": "b12f940b-d921-4657-bcc3-1d487dc53864", "facility_region": "aws-ap-southeast-1", "event_type": "in_transit", "event_ts": "2025-11-13T02:01:09Z", "notes": "Package delivered"}
 ])
 
 producer.close()
