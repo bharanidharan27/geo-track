@@ -59,3 +59,7 @@ enqueue_batch_messages([
 ])
 
 producer.close()
+
+
+# DLQ
+# Multiple consumers fr each topic

@@ -5,6 +5,8 @@ from psycopg2.errors import SerializationFailure
 from psycopg.rows import tuple_row
 from dotenv import load_dotenv
 
+from generator.kafka_dlq_producer import send_to_dlq
+
 # Load environment variables from .env file
 load_dotenv()
 COCKROACH_URL = os.getenv("COCKROACH_URL")
@@ -32,7 +34,17 @@ DO NOTHING;
 """
 
 def insert_scanned_events_batch(batch_records):
-    batch_records = [build_db_tuple(v) for v in batch_records]
+    valid_records = []
+    for record in batch_records:
+        try:
+            valid_records.append(build_db_tuple(record))
+        except Exception as e:
+            # Bad message → DLQ
+            send_to_dlq(record, f"Tuple build error: {str(e)}")
+    
+    if not valid_records:
+        return
+
     while True:
         try:
             with psycopg2.connect(COCKROACH_URL) as conn:
@@ -50,4 +62,7 @@ def insert_scanned_events_batch(batch_records):
                 time.sleep(0.2)
                 continue
             else:
-                raise
+                # DB error → send whole batch to DLQ
+                for record in batch_records:
+                    send_to_dlq(record, f"DB Insert Error: {str(e)}")
+                return
