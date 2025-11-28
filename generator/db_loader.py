@@ -82,7 +82,7 @@ def load_carriers(path="./data/carriers.json"):
 
 def load_parcels(path="./data/parcels.json"):
     with open(path) as f: data = json.load(f)
-    cols = ["tracking_id", "account_id", "carrier_id", "origin_region",
+    cols = ["tracking_id", "account_id", "carrier_id", "origin_region", "source_location", "destination_location",
             "destination_region", "status", "last_event_ts",
             "created_at", "updated_at"]
     return data, cols, "parcels"
