@@ -20,6 +20,7 @@ def build_db_tuple(msg_value_json):
         data["tracking_id"],
         data["event_ts"],
         data["facility_region"],
+        data["facility_location"],
         data["event_type"],
         data["notes"],
         data["event_ts"],
@@ -27,7 +28,7 @@ def build_db_tuple(msg_value_json):
 
 UPSERT_SQL = """
 INSERT INTO public.scan_events (
-    account_id, carrier_id, tracking_id, event_ts, facility_region, event_type, notes, created_at
+    account_id, carrier_id, tracking_id, event_ts, facility_region, facility_location, event_type, notes, created_at
 ) VALUES %s
 ON CONFLICT (tracking_id, event_ts, event_type) 
 DO NOTHING;
