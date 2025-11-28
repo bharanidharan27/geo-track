@@ -20,8 +20,8 @@ def build_db_tuple(msg_value_json):
         data["event_ts"],
         data["facility_region"],
         data["event_type"],
-        data.get("notes"),
-        time.time(),
+        data["notes"],
+        data["event_ts"],
     )
 
 UPSERT_SQL = """
