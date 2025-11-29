@@ -18,7 +18,8 @@ consumer = KafkaConsumer(
     sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
     group_id=os.getenv("KAFKA_CONSUMER_GROUP_ID"),
     auto_offset_reset="earliest",
-    enable_auto_commit=False
+    enable_auto_commit=False,
+    max_poll_interval_ms=900000
 )
 
 if len(sys.argv) != 2:
@@ -42,7 +43,7 @@ try:
     print("Starting Kafka Consumer...")
 
     while True:
-        records = consumer.poll(timeout_ms=500, max_records=200)
+        records = consumer.poll(timeout_ms=200, max_records=300)
         if not records:
             continue
 
