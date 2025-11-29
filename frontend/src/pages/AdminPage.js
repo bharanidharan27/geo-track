@@ -148,6 +148,16 @@ function AdminPage() {
                   <option key={region} value={region}>{region}</option>
                 ))}
               </select>
+              <input
+                className="form-control mb-2"
+                placeholder="Source Location"
+                onChange={(e) => setParcel({ ...parcel, source_location: e.target.value })}
+              />
+              <input
+                className="form-control mb-3"
+                placeholder="Destination Location"
+                onChange={(e) => setParcel({ ...parcel, destination_location: e.target.value })}
+              />
               <button className="btn btn-success w-100">Submit Parcel</button>
             </form>
           </div>
