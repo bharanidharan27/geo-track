@@ -21,6 +21,15 @@ function ScanPage() {
     alert(JSON.stringify(response));
   };
 
+  const regionOptions = [
+    'aws-us-east-1',
+    'aws-us-west-2',
+    'gcp-us-central1',
+    'gcp-europe-west1',
+    'azure-eastus',
+    'azure-westus'
+  ];
+
   return (
     <div className="d-flex flex-column justify-content-center align-items-center text-white bg-dark min-vh-100">
       <div className="text-center p-4" style={{ maxWidth: "600px", width: "100%" }}>
@@ -35,12 +44,13 @@ function ScanPage() {
 
           <select className="form-control mb-2" onChange={(e) => setScan({ ...scan, event_type: e.target.value })}>
             <option value="">Select Event Type</option>
-            <option value="Package received at Store">Package received at Store</option>
-            <option value="Package reached shipping facility">Package reached shipping facility</option>
-            <option value="Package out in transit">Package out in transit</option>
-            <option value="Package reached destination facility">Package reached destination facility</option>
-            <option value="Package out of delivery">Package out of delivery</option>
-            <option value="Package Delivered">Package Delivered</option>
+            <option value="handoff">handoff</option>
+            <option value="arrival">arrival</option>
+            <option value="departure">departure</option>
+            <option value="out_for_delivery">out_for_delivery</option>
+            <option value="delivered">delivered</option>
+            <option value="exception">exception</option>
+            <option value="rts">rts</option>
           </select>
 
           <input
@@ -50,11 +60,17 @@ function ScanPage() {
             readOnly
           />
 
-          <input
+          <select
             className="form-control mb-2"
-            placeholder="Facility Region"
+            value={scan.facility_region}
             onChange={(e) => setScan({ ...scan, facility_region: e.target.value })}
-          />
+          >
+            <option value="">Select Facility Region</option>
+            {regionOptions.map((region) => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+          </select>
+
           <input
             className="form-control mb-3"
             placeholder="Notes (optional)"
