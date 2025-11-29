@@ -50,23 +50,26 @@ try:
 
         for tp, msgs in records.items():
             for msg in msgs:
-                topic_info = f"topic: {msg.topic} ({msg.partition}|{msg.offset})"
-                key = msg.key.decode() if msg.key else None
-                val = msg.value.decode() if msg.value else None
-                message_info = f"key: {key}, value={val}"
-                print(f"{topic_info}, {message_info}")
+                try :
+                    topic_info = f"topic: {msg.topic} ({msg.partition}|{msg.offset})"
+                    key = msg.key.decode() if msg.key else None
+                    val = msg.value.decode() if msg.value else None
+                    message_info = f"key: {key}, value={val}"
+                    print(f"{topic_info}, {message_info}")
 
-                if not val:
-                    send_to_dlq(None, "Empty message received")
-                    continue
+                    if not val:
+                        send_to_dlq(None, "Empty message received")
+                        continue
 
-                batch_values.append(val)
+                    batch_values.append(val)
+                except Exception as e:
+                    send_to_dlq(msg.value, f"Decode error: {str(e)}")
         
         if batch_values:
             insert_scanned_events_batch(batch_values)
         
         consumer.commit()
-except Exception as e:
-    print(f"[FATAL] Consumer failure: {str(e)}")
+except KeyboardInterrupt:
+    pass
 finally:
     consumer.close()
