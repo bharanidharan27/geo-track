@@ -8,7 +8,7 @@ from generator.kafka_dlq_producer import send_to_dlq
 # Load environment variables from .env file
 load_dotenv()
 
-KAFKA_TOPIC_LIST = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1", "dead-letter-q"]
+KAFKA_TOPIC_LIST = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
 
 consumer = KafkaConsumer(
     bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
@@ -28,7 +28,7 @@ if len(sys.argv) != 2:
 TOPIC_ID = int(sys.argv[1])
 TOPIC = KAFKA_TOPIC_LIST[TOPIC_ID]
 
-if TOPIC_ID < 0 and TOPIC_ID > 5:
+if TOPIC_ID < 0 and TOPIC_ID > 4:
     print(f"[ERROR] Unknown topic '{TOPIC}'. Allowed: {KAFKA_TOPIC_LIST}")
     sys.exit(1)
 
@@ -55,7 +55,7 @@ try:
                     key = msg.key.decode() if msg.key else None
                     val = msg.value.decode() if msg.value else None
                     message_info = f"key: {key}, value={val}"
-                    print(f"{topic_info}, {message_info}")
+                    print(f"{topic_info},\n{message_info}")
 
                     if not val:
                         send_to_dlq(None, "Empty message received")
