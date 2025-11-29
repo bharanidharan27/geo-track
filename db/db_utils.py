@@ -63,5 +63,5 @@ def insert_scanned_events_batch(batch_records):
             else:
                 # DB error → send whole batch to DLQ
                 for record in batch_records:
-                    send_to_dlq(raw, f"DB error: {str(e)}")
+                    send_to_dlq(record, f"DB error: {str(e)}")
                 return
