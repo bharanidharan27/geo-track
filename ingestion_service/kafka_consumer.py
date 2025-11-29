@@ -1,5 +1,5 @@
 from kafka import KafkaConsumer
-import os, sys
+import os, sys, json
 from dotenv import load_dotenv
 
 from db.db_utils import insert_scanned_events_batch
@@ -60,16 +60,23 @@ try:
                     if not val:
                         send_to_dlq(None, "Empty message received")
                         continue
+                    
+                    try:
+                        json.loads(val)
+                    except Exception as e:
+                        send_to_dlq(val, f"JSON decode error: {str(e)}")
+                        continue
 
                     batch_values.append(val)
                 except Exception as e:
-                    send_to_dlq(msg.value, f"Decode error: {str(e)}")
+                    send_to_dlq(msg.value.decode() if msg.value else None,
+                                f"Decode/processing error: {str(e)}")
         
         if batch_values:
             insert_scanned_events_batch(batch_values)
         
         consumer.commit()
 except KeyboardInterrupt:
-    pass
+    print("\n[INFO] Shutting down consumer...")
 finally:
     consumer.close()

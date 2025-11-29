@@ -1,11 +1,9 @@
 import time, os, json
-from datetime import datetime
 import psycopg2, psycopg2.extras
-from psycopg2.errors import SerializationFailure
-from psycopg.rows import tuple_row
 from dotenv import load_dotenv
 
 from generator.kafka_dlq_producer import send_to_dlq
+from db.db_validator import validate_scan_event
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,7 +21,7 @@ def build_db_tuple(msg_value_json):
         data["facility_location"],
         data["event_type"],
         data["notes"],
-        data["event_ts"],
+        data["created_at"],
     )
 
 UPSERT_SQL = """
@@ -38,10 +36,10 @@ def insert_scanned_events_batch(batch_records):
     valid_records = []
     for record in batch_records:
         try:
-            valid_records.append(build_db_tuple(record))
+            data = validate_scan_event(record)
+            valid_records.append(build_db_tuple(data))
         except Exception as e:
-            # Bad message → DLQ
-            send_to_dlq(record, f"Tuple build error: {str(e)}")
+            send_to_dlq(data, f"Validation error: {str(e)}")
     
     if not valid_records:
         return
@@ -65,5 +63,5 @@ def insert_scanned_events_batch(batch_records):
             else:
                 # DB error → send whole batch to DLQ
                 for record in batch_records:
-                    send_to_dlq(record, f"DB Insert Error: {str(e)}")
+                    send_to_dlq(raw, f"DB error: {str(e)}")
                 return
