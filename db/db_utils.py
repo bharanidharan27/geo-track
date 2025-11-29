@@ -9,9 +9,7 @@ from db.db_validator import validate_scan_event
 load_dotenv()
 COCKROACH_URL = os.getenv("COCKROACH_URL")
 
-def build_db_tuple(msg_value_json):
-    data = json.loads(msg_value_json)
-
+def build_db_tuple(data):
     return (
         data["account_id"],
         data["carrier_id"],
@@ -21,14 +19,13 @@ def build_db_tuple(msg_value_json):
         data["facility_location"],
         data["event_type"],
         data["notes"],
-        data["created_at"],
     )
 
 UPSERT_SQL = """
 INSERT INTO public.scan_events (
-    account_id, carrier_id, tracking_id, event_ts, facility_region, facility_location, event_type, notes, created_at
+    account_id, carrier_id, tracking_id, event_ts, facility_region, facility_location, event_type, notes
 ) VALUES %s
-ON CONFLICT (tracking_id, event_ts, event_type) 
+ON CONFLICT (tracking_id, event_ts, event_type, facility_region) 
 DO NOTHING;
 """
 
@@ -39,7 +36,7 @@ def insert_scanned_events_batch(batch_records):
             data = validate_scan_event(record)
             valid_records.append(build_db_tuple(data))
         except Exception as e:
-            send_to_dlq(data, f"Validation error: {str(e)}")
+            send_to_dlq(record, f"Validation error: {str(e)}")
     
     if not valid_records:
         return
@@ -51,9 +48,10 @@ def insert_scanned_events_batch(batch_records):
                     psycopg2.extras.execute_values(
                         cur,
                         UPSERT_SQL,
-                        batch_records,
-                        page_size=len(batch_records),
+                        valid_records,
+                        page_size=len(valid_records),
                     )
+                print(f"\n[DB] Inserted batch of {len(valid_records)} records to CockroachDB successfully.\n")
             break
         except psycopg2.Error as e:
             if e.pgcode == "40001":
