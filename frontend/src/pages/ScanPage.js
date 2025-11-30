@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function ScanPage() {
-  const [scan, setScan] = useState({ tracking_id: '', event_type: '', event_ts: '', facility_region: '', notes: '' });
+  const [scan, setScan] = useState({
+    tracking_id: '',
+    event_type: '',
+    event_ts: '',
+    facility_region: '',
+    facility_location: '',
+    notes: ''
+  });
 
   const handleTrackingId = (e) => {
     const tracking_id = e.target.value;
@@ -11,15 +20,30 @@ function ScanPage() {
   };
 
   const handleScan = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  try {
     const res = await fetch('http://localhost:8000/admin/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(scan)
     });
-    const response = await res.json();
-    alert(JSON.stringify(response));
-  };
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (res.status === 404) {
+        toast.error("Tracking ID not found");
+      } else {
+        toast.error(`${data.detail || "Scan failed"}`);
+      }
+      return;
+    }
+
+    toast.success(`Parcel successfully scanned at ${scan.facility_location || "facility"}`);
+  } catch (err) {
+    toast.error("Network error while scanning");
+  }
+};
 
   const regionOptions = [
     'aws-us-east-1',
@@ -32,6 +56,7 @@ function ScanPage() {
 
   return (
     <div className="d-flex flex-column justify-content-center align-items-center text-white bg-dark min-vh-100">
+      <ToastContainer position="top-center" autoClose={3000} />
       <div className="text-center p-4" style={{ maxWidth: "600px", width: "100%" }}>
         <h2 className="mb-4">📍 Log Scan Event</h2>
         <form onSubmit={handleScan}>
