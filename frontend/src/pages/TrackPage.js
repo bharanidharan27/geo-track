@@ -36,7 +36,12 @@ function TrackPage() {
               {result.history.map((ev, i) => (
                 <li key={i} className="mb-3">
                   <div className="fw-bold">{ev.event_type}</div>
-                  <div className="small text-muted">{ev.event_ts || ev.timestamp} — {ev.facility_region || ev.location}</div>
+                  <div className="small text-muted">
+                    {ev.event_ts || ev.timestamp} — {ev.facility_region}
+                  </div>
+                  {ev.facility_location && (
+                    <div className="text-muted">Location: {ev.facility_location}</div>
+                  )}
                   {ev.notes && <div className="fst-italic">{ev.notes}</div>}
                 </li>
               ))}
@@ -50,6 +55,7 @@ function TrackPage() {
                   <th>Timestamp</th>
                   <th>Event Type</th>
                   <th>Facility Region</th>
+                  <th>Facility Location</th>
                   <th>Notes</th>
                 </tr>
               </thead>
@@ -59,6 +65,7 @@ function TrackPage() {
                     <td>{ev.event_ts || ev.timestamp}</td>
                     <td>{ev.event_type}</td>
                     <td>{ev.facility_region || ev.location}</td>
+                    <td>{ev.facility_location || '-'}</td>
                     <td>{ev.notes || '-'}</td>
                   </tr>
                 ))}

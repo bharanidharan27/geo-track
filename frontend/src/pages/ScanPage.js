@@ -72,6 +72,12 @@ function ScanPage() {
           </select>
 
           <input
+            className="form-control mb-2"
+            placeholder="Facility Location"
+            onChange={(e) => setScan({ ...scan, facility_location: e.target.value })}
+          />
+
+          <input
             className="form-control mb-3"
             placeholder="Notes (optional)"
             onChange={(e) => setScan({ ...scan, notes: e.target.value })}
