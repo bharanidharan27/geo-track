@@ -18,12 +18,11 @@ def build_db_tuple(data):
         data["facility_region"],
         data["facility_location"],
         data["event_type"],
-        data["notes"],
     )
 
 UPSERT_SQL = """
 INSERT INTO public.scan_events (
-    account_id, carrier_id, tracking_id, event_ts, facility_region, facility_location, event_type, notes
+    account_id, carrier_id, tracking_id, event_ts, facility_region, facility_location, event_type
 ) VALUES %s
 ON CONFLICT (tracking_id, event_ts, event_type, facility_region) 
 DO NOTHING;
