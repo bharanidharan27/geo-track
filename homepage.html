@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GeoTrack – Distributed Parcel Tracking & ETA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-alt: #0b1020;
+      --card: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.16);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-subtle: #1f2933;
+      --danger: #fb7185;
+      --success: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 55%);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(
+        to bottom,
+        rgba(15, 23, 42, 0.92),
+        rgba(15, 23, 42, 0.8),
+        transparent
+      );
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .nav {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #e5e7eb, #0ea5e9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #020617;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.7);
+    }
+
+    .logo-sub {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .pill {
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: var(--text-muted);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      padding-bottom: 3.5rem;
+    }
+
+    /* Hero section */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr);
+      gap: 2.5rem;
+      padding: 2.5rem 1.25rem 2.75rem;
+      border-radius: 1.75rem;
+      margin-top: 1rem;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.14), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.12), transparent 55%),
+        linear-gradient(135deg, #020617, #020617);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow:
+        0 0 50px rgba(15, 23, 42, 0.9),
+        inset 0 0 0 1px rgba(15, 23, 42, 0.85);
+    }
+
+    @media (max-width: 880px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .chip {
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text-muted);
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.15rem, 3vw, 2.65rem);
+      line-height: 1.15;
+      margin: 0 0 0.75rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(120deg, #7dd3fc, #e5e7eb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-lead {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      max-width: 34rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 1.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .hero-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .hero-card {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 0.9rem;
+      padding: 0.8rem 0.85rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .hero-card-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--text-muted);
+    }
+
+    .hero-card-value {
+      font-size: 0.96rem;
+      font-weight: 600;
+    }
+
+    .hero-card-tag {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .hero-diagram {
+      position: relative;
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 1.25rem;
+      padding: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      box-shadow:
+        0 18px 60px rgba(15, 23, 42, 0.96),
+        inset 0 0 0 1px rgba(15, 23, 42, 0.9);
+      overflow: hidden;
+    }
+
+    .diagram-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .diagram-badge {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      background: rgba(8, 47, 73, 0.7);
+      color: #e0f2fe;
+    }
+
+    .diagram-grid {
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 0.45rem;
+      margin-top: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .diagram-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .node {
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.25), #020617);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+
+    .node.primary {
+      border-color: rgba(56, 189, 248, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.25), #020617);
+      color: #e0f2fe;
+    }
+
+    .node.orange {
+      border-color: rgba(251, 191, 36, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(251, 191, 36, 0.2), #020617);
+      color: #fef9c3;
+    }
+
+    .node.green {
+      border-color: rgba(52, 211, 153, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(52, 211, 153, 0.23), #020617);
+      color: #dcfce7;
+    }
+
+    .node.pink {
+      border-color: rgba(244, 114, 182, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(244, 114, 182, 0.2), #020617);
+      color: #fdf2ff;
+    }
+
+    .arrow {
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    /* Sections */
+    section {
+      margin-top: 2.5rem;
+    }
+
+    section h2 {
+      font-size: 1.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    section > p.section-intro {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      max-width: 46rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 880px) {
+      .two-col {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.1rem;
+    }
+
+    @media (max-width: 1024px) {
+      .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .card-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.85);
+    }
+
+    .card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }
+
+    .card span.label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .card ul {
+      margin: 0.2rem 0 0;
+      padding-left: 1.1rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .card ul li + li {
+      margin-top: 0.2rem;
+    }
+
+    /* Data flow steps */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 960px) {
+      .steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .steps {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .step {
+      background: var(--bg-alt);
+      border-radius: 0.9rem;
+      padding: 0.9rem;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+    }
+
+    .step-index {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .step-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-body {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    /* Tag list */
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px dashed rgba(148, 163, 184, 0.55);
+      color: var(--text-muted);
+    }
+
+    .tag.strong {
+      border-style: solid;
+      border-color: rgba(56, 189, 248, 0.8);
+      background: rgba(8, 47, 73, 0.85);
+      color: #e0f2fe;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.24);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(8, 47, 73, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.85);
+      font-size: 0.7rem;
+      color: #e0f2fe;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="logo">
+        <div class="logo-mark">GT</div>
+        <div>
+          GeoTrack
+          <span class="logo-sub">Distributed Parcel Tracking &amp; ETA Service</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#architecture">Architecture</a>
+        <a href="#components">Components</a>
+        <a href="#flow">Data Flow</a>
+        <a href="#distribution">Distributed Properties</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div>
+        <div class="chip-row">
+          <div class="chip">
+            <span class="chip-dot"></span>
+            Multi-region logistics simulation
+          </div>
+          <div class="chip">
+            RF=3 &middot; Serializable &middot; Exactly-once
+          </div>
+        </div>
+        <h1>
+          Geo-distributed <span>parcel tracking platform</span> built on Kafka &amp; CockroachDB
+        </h1>
+        <p class="hero-lead">
+          GeoTrack models a global courier network where millions of scan events are streamed through Kafka,
+          stored in a multi-region CockroachDB cluster, and exposed via FastAPI for low-latency tracking and
+          observability.
+        </p>
+        <div class="hero-grid">
+          <div class="hero-card">
+            <span class="hero-card-label">Data Plane</span>
+            <div class="hero-card-value">Apache Kafka</div>
+            <div class="hero-card-tag">Regional topics &amp; key-based partitions</div>
+          </div>
+          <div class="hero-card">
+            <span class="hero-card-label">Storage</span>
+            <div class="hero-card-value">CockroachDB</div>
+            <div class="hero-card-tag">REGIONAL BY ROW, RF=3, Raft</div>
+          </div>
+          <div class="hero-card">
+            <span class="hero-card-label">API Layer</span>
+            <div class="hero-card-value">FastAPI</div>
+            <div class="hero-card-tag">/admin/* &amp; /track/{tracking_id}</div>
+          </div>
+          <div class="hero-card">
+            <span class="hero-card-label">Observability</span>
+            <div class="hero-card-value">Prometheus + Grafana</div>
+            <div class="hero-card-tag">Latency, throughput, replication lag</div>
+          </div>
+          <div class="hero-card">
+            <span class="hero-card-label">Scale Target</span>
+            <div class="hero-card-value">&ge; 10M scan events</div>
+            <div class="hero-card-tag">Synthetic, multi-region data</div>
+          </div>
+          <div class="hero-card">
+            <span class="hero-card-label">Fault Tolerance</span>
+            <div class="hero-card-value">Chaos-ready</div>
+            <div class="hero-card-tag">DLQ, retries, Raft self-healing</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini architecture diagram -->
+      <aside class="hero-diagram" style="
+    background: #f8fafc;        /* Light background */
+    border-radius: 1.25rem;
+    padding: 1rem;
+    border: 1px solid rgba(30,41,59,0.3);
+">
+  <div class="diagram-title" style="color:#0f172a;">High-level Architecture</div>
+  <div class="diagram-badge" style="
+      background:#e0f2fe;
+      border-color:#0ea5e9;
+      color:#0369a1;
+  ">Geo-distributed · Event-driven</div>
+
+  <img 
+    src="D:\College Work\SEM 1\DDS\Bharanidharan Maheswaran\Project Docs\GeoTrack Architecture (2).png"
+    alt="GeoTrack Architecture Diagram"
+    style="
+      width: 100%;
+      display: block;
+      border-radius: 0.75rem;
+    "
+  />
+</aside>
+
+    </section>
+
+    <!-- Architecture Overview -->
+    <section id="architecture">
+      <h2>System Architecture Overview</h2>
+      <p class="section-intro">
+        The GeoTrack platform uses an event-driven pipeline: scan events are ingested by Kafka producers,
+        streamed through regional topics, processed by an idempotent consumer, and stored in a
+        partition-aware CockroachDB cluster. FastAPI exposes REST APIs for tracking and administration,
+        while Prometheus and Grafana close the loop with end-to-end observability.
+      </p>
+
+      <div class="two-col">
+        <div>
+          <h3>Design principles</h3>
+          <ul style="color: var(--text-muted); font-size: 0.92rem;">
+            <li>Geo-distributed design with workload and data locality across AWS regions.</li>
+            <li>Event-sourced scan history using append-only streams and ordered partitions.</li>
+            <li>Strong consistency and exactly-once semantics at the application layer.</li>
+            <li>Built-in fault tolerance using replication, DLQs, retries, and Raft.</li>
+            <li>First-class observability for latency, throughput, and recovery behavior.</li>
+          </ul>
+
+          <div class="tag-row">
+            <span class="tag strong">Multi-region CockroachDB</span>
+            <span class="tag">Kafka &amp; Redpanda cluster</span>
+            <span class="tag">FastAPI microservice</span>
+            <span class="tag">React + Bootstrap UI</span>
+            <span class="tag">Prometheus metrics</span>
+            <span class="tag">Grafana dashboards</span>
+          </div>
+        </div>
+
+        <div>
+          <h3>Key tables &amp; partitioning</h3>
+          <div class="card" style="margin-bottom: 0.8rem;">
+            <span class="label">CockroachDB schema</span>
+            <ul>
+              <li><strong>Accounts</strong> &mdash; REGIONAL BY ROW, keyed by <em>home_region</em>.</li>
+              <li><strong>Parcels</strong> &mdash; REGIONAL BY ROW, keyed by <em>destination_region</em>.</li>
+              <li><strong>ScanEvents</strong> &mdash; REGIONAL BY ROW, keyed by <em>facility_region</em>.</li>
+              <li><strong>Carriers</strong> &mdash; GLOBAL, replicated across all regions.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <span class="label">Cluster guarantees</span>
+            <ul>
+              <li>Replication factor RF = 3 with Raft-based consensus for every range.</li>
+              <li>Automatic leaseholder re-election on node or zone failures.</li>
+              <li>Serializable isolation for all OLTP queries and writes.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Major Components -->
+    <section id="components">
+      <h2>Major Components</h2>
+      <p class="section-intro">
+        The system is composed of modular services, each focusing on a single responsibility. Together they
+        form a resilient and scalable parcel tracking pipeline.
+      </p>
+
+      <div class="card-grid">
+        <article class="card">
+          <span class="label">Ingestion</span>
+          <h3>Kafka Producers &amp; Topics</h3>
+          <ul>
+            <li>Scan events are pushed into region-specific topics (e.g., <em>aws-us-west-2</em>).</li>
+            <li>Key-based partitioning on <code>tracking_id</code> preserves per-parcel ordering.</li>
+            <li>Producers configured with <code>acks = all</code> to ensure durable commits.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="label">Streaming Backbone</span>
+          <h3>Kafka / Redpanda Cluster</h3>
+          <ul>
+            <li>Distributed log with multiple partitions per topic for parallelism.</li>
+            <li>Replicated partitions across brokers for durability and availability.</li>
+            <li>Supports consumer groups for scalable consumption.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="label">Processing</span>
+          <h3>Kafka Consumer Service</h3>
+          <ul>
+            <li>Consumes regional topics in batches and prepares DB-ready payloads.</li>
+            <li>Performs idempotent UPSERTs to achieve exactly-once behavior.</li>
+            <li>Implements DLQ routing, retries, and backoff for failed messages.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="label">Storage</span>
+          <h3>CockroachDB Multi-Region Cluster</h3>
+          <ul>
+            <li>REGIONAL BY ROW layout to co-locate data with traffic.</li>
+            <li>Raft consensus with RF=3 and quorum writes (2 / 3).</li>
+            <li>Automatic range rebalancing and leader transfers on faults.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="label">API Layer</span>
+          <h3>FastAPI Service</h3>
+          <ul>
+            <li>Admin APIs: <code>/admin/accounts</code>, <code>/admin/carriers</code>, <code>/admin/parcel</code>, <code>/admin/scan</code>.</li>
+            <li>Tracking API: <code>GET /track/{tracking_id}</code> returns parcel status and history.</li>
+            <li>Stateless services for simple horizontal scaling.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="label">Monitoring</span>
+          <h3>Prometheus &amp; Grafana</h3>
+          <ul>
+            <li>Prometheus scrapes metrics from Kafka, FastAPI, and CockroachDB.</li>
+            <li>Grafana dashboards visualize latency, throughput, and replication health.</li>
+            <li>Used to observe chaos tests and recovery behavior.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Data & Control Flow -->
+    <section id="flow">
+      <h2>End-to-End Data &amp; Control Flow</h2>
+      <p class="section-intro">
+        A parcel’s journey is modeled as a sequence of scan events. Each event travels through the
+        streaming pipeline to become a strongly consistent row in the database, visible via REST APIs.
+      </p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-index">1</div>
+          <div class="step-title">Event generation</div>
+          <p class="step-body">
+            Regional facilities or synthetic generators emit scan events (handoff, arrival, departure, delivered)
+            with timestamps and facility region metadata.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-index">2</div>
+          <div class="step-title">Kafka ingestion</div>
+          <p class="step-body">
+            Producers publish each event into the appropriate regional Kafka topic. The <code>tracking_id</code>
+            determines the partition, ensuring ordered events per parcel.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-index">3</div>
+          <div class="step-title">Durable streaming</div>
+          <p class="step-body">
+            Kafka replicates partitions across brokers. With <code>acks=all</code>, an event is acknowledged only
+            after all in-sync replicas persist it.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-index">4</div>
+          <div class="step-title">Consumer processing</div>
+          <p class="step-body">
+            The consumer service reads batches, deduplicates on composite keys
+            (<code>tracking_id</code>, <code>event_ts</code>, <code>event_type</code>), and executes transactional UPSERTs
+            into CockroachDB.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-index">5</div>
+          <div class="step-title">Database storage</div>
+          <p class="step-body">
+            CockroachDB stores accounts, parcels, carriers, and scan events with per-table regional keys,
+            enabling local reads and strongly consistent writes under serializable isolation.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-index">6</div>
+          <div class="step-title">Client access &amp; monitoring</div>
+          <p class="step-body">
+            FastAPI exposes tracking endpoints to the UI. Prometheus scrapes metrics and Grafana visualizes
+            system behavior, including chaos experiments and fault recovery.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Distribution characteristics -->
+    <section id="distribution">
+      <h2>Distributed System Characteristics</h2>
+      <p class="section-intro">
+        GeoTrack demonstrates classic distributed database properties in a realistic logistics scenario,
+        highlighting how partitioning, replication, and consistency interact under load and failures.
+      </p>
+
+      <div class="two-col">
+        <div>
+          <h3>Partitioning &amp; locality</h3>
+          <ul style="color: var(--text-muted); font-size: 0.9rem;">
+            <li>Regional Kafka topics isolate workloads and failures by geography.</li>
+            <li>REGIONAL BY ROW tables route queries and writes to nearby replicas.</li>
+            <li>Tracking queries benefit from locality when run from the same region as the data.</li>
+          </ul>
+
+          <h3>Replication &amp; consistency</h3>
+          <ul style="color: var(--text-muted); font-size: 0.9rem;">
+            <li>Kafka replication factor and <code>acks=all</code> provide durable event logs.</li>
+            <li>CockroachDB uses Raft, RF=3, and quorum writes for strong consistency.</li>
+            <li>Serializable isolation guarantees that concurrent transactions behave as if sequential.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3>Fault tolerance &amp; observability</h3>
+          <ul style="color: var(--text-muted); font-size: 0.9rem;">
+            <li>Dead Letter Queues capture malformed or repeatedly failing messages for later replay.</li>
+            <li>Automatic leaseholder re-election and range rebalancing keep the cluster healthy.</li>
+            <li>Chaos tests (network delay, broker restart) are monitored via latency and error metrics.</li>
+            <li>Targets: RTO &lt; 30 seconds, error rate &lt; 2%, zero data loss under tested scenarios.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>
+        &copy; GeoTrack &mdash; Group 18 &middot; Distributed Databases &amp; Systems Project.
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        Architecture: Phase 2 &mdash; High-Level Design Implemented
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

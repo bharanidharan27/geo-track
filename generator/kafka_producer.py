@@ -7,19 +7,21 @@ load_dotenv()
 
 KAFKA_TOPIC_LIST = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
 
-producer = KafkaProducer(
-    bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
-    security_protocol="SASL_SSL",
-    sasl_mechanism=os.getenv("KAFKA_SASL_MECHANISM"),
-    sasl_plain_username=os.getenv("KAFKA_USER"),
-    sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
-    acks="all",
-    linger_ms=10,
-    retries=100,
-    key_serializer=lambda k: str(k).encode() if k is not None else None,
-    value_serializer=lambda v: json.dumps(v).encode(),
-)
 hostname = socket.gethostname().encode()
+
+def create_producer():
+    return KafkaProducer(
+        bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
+        security_protocol="SASL_SSL",
+        sasl_mechanism=os.getenv("KAFKA_SASL_MECHANISM"),
+        sasl_plain_username=os.getenv("KAFKA_USER"),
+        sasl_plain_password=os.getenv("KAFKA_PASSWORD"),
+        acks="all",
+        linger_ms=10,
+        retries=100,
+        key_serializer=lambda k: str(k).encode() if k is not None else None,
+        value_serializer=lambda v: json.dumps(v).encode(),
+    )
 
 def on_success(metadata):
     print(f"Sent to topic '{metadata.topic}' partition {metadata.partition} at offset {metadata.offset}")
@@ -27,7 +29,7 @@ def on_success(metadata):
 def on_error(e):
     print(f"Error sending message: {e}")
 
-def enqueue_message(msg, topic):
+def enqueue_message(producer, msg, topic):
     if topic not in KAFKA_TOPIC_LIST:
         print(f"Invalid topic: {topic}. Message not sent.")
         return
@@ -37,18 +39,22 @@ def enqueue_message(msg, topic):
         key=key,
         value=msg
     )
+    future = producer.send(
+        topic=topic,
+        key=key,
+        value=msg
+    )
     future.add_callback(on_success)
     future.add_errback(on_error)
-    
-def enqueue_batch_messages(msgs):
+
+def enqueue_batch_messages(producer, msgs):
     for msg in msgs:
         topic = msg["facility_region"]
         if not topic:
-            print("Message missing 'region' field. Skipped:", msg)
+            print("Message missing 'facility_region' field. Skipped:", msg)
             continue
-        enqueue_message(msg, topic)
-    producer.flush()
-    print("Producer finished successfully.")
+        enqueue_message(producer, msg, topic)
+
 # How to batch queue
 
 # enqueue_batch_messages([
@@ -58,4 +64,4 @@ def enqueue_batch_messages(msgs):
 #     # {"tracking_id": "TRK00000003", "account_id": "71e08387-a2ba-4a2a-a45e-e2156dd3b971", "carrier_id": "b12f940b-d921-4657-bcc3-1d487dc53864", "facility_region": "aws-ap-southeast-1", "event_type": "in_transit", "event_ts": "2025-11-13T02:01:09Z", "notes": "Package delivered"}
 # ])
 
-producer.close()
+# producer.close()

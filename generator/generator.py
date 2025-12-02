@@ -1,9 +1,10 @@
 import multiprocessing as mp
 from tqdm import tqdm
-import os
+import os, sys
 import random, json
 from uuid import uuid4
 from datetime import datetime, timedelta, timezone
+from kafka_producer import create_producer, enqueue_batch_messages
 
 from faker import Faker
 
@@ -136,7 +137,6 @@ def generate_events_for_parcel(parcel: dict, max_events_per_parcel: int = 10):
 def _build_event(tracking_id, account_id, carrier_id,
                  event_ts_dt, facility_location, facility_region, ev_type):
     return {
-        "event_id": str(uuid4()),
         "account_id": account_id,
         "carrier_id": carrier_id,
         "tracking_id": tracking_id,
@@ -144,7 +144,6 @@ def _build_event(tracking_id, account_id, carrier_id,
         "facility_location": facility_location,
         "facility_region": facility_region,
         "event_type": ev_type,
-        "notes": fake.sentence(),
     }
 
 def build_logical_event_sequence(max_events: int) -> list[str]:
@@ -246,7 +245,6 @@ def produce_region_events(region, parcels, events_per_parcel=10):
             continue
         parcel_events[parcel["tracking_id"]] = events
         total_events += len(events)
-
     if not parcel_events:
         print(f"[{region}] No events to produce after filtering.")
         return
@@ -256,31 +254,47 @@ def produce_region_events(region, parcels, events_per_parcel=10):
     # Interleave events across parcels
     active_ids = list(parcel_events.keys())
     produced = 0
+    producer = create_producer()
 
+    events = []
     while active_ids:
         idx = random.randint(0, len(active_ids) - 1)
         tracking_id = active_ids[idx]
         events_list = parcel_events[tracking_id]
 
         event = events_list.pop(0)
+        
         topic = get_topic_for_region(event["facility_region"])
 
-        send_event(topic, tracking_id, event)
+        # send_event(topic, tracking_id, event)
         produced += 1
 
         if not events_list:
             active_ids.pop(idx)
 
-        if produced % 50_000 == 0:
-            flush()
+        events.append(event)
+        if produced % 10000 == 0:
+            # flush()
+            # print(json.dump(events, sys.stdout, indent=2))
+            # break
+            enqueue_batch_messages(producer, events)
+            producer.flush()
+            events = []
             print(f"[{region}] Flushed at {produced:,} events...")
+    # flush()
 
-    flush()
-    print(f"✅ [{region}] Done producing {produced:,} events.")
+    if events:
+        enqueue_batch_messages(producer, events)
+        producer.flush()
+        print(f"[{region}] Final flush, total {produced} events")
+
+    producer.close()
+
+    print("Producer closed.")
 
 
 
-def run_pipeline(total_parcels=1_000_000, events_per_parcel=10):
+def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
     """Generate seeds only if not already created, then spawn region processes."""
     print("🔹 Checking for existing seed files...")
 
@@ -324,7 +338,6 @@ def run_pipeline(total_parcels=1_000_000, events_per_parcel=10):
 
     print("✅ Seed data ready for pipeline.")
 
-    return
     # Split parcels by region (origin_region → same as scan locality)
     regions = list_supported_regions()
     grouped = {r: [] for r in regions}
@@ -344,4 +357,4 @@ def run_pipeline(total_parcels=1_000_000, events_per_parcel=10):
     print("🎯 All region producers completed.")
 
 if __name__ == "__main__":
-    run_pipeline(total_parcels=1_000_000, events_per_parcel=10)
+    run_pipeline(total_parcels=3_000_000, events_per_parcel=10)

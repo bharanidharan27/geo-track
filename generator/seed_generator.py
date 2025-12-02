@@ -39,7 +39,7 @@ def generate_carriers(n=50):
         })
     return carriers
 
-def generate_parcels(accounts, carriers, n=1_000_000):
+def generate_parcels(accounts, carriers, n=3_000_000):
     """
     Generate parcels with logically consistent source/destination locations and regions.
 
