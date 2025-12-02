@@ -116,10 +116,9 @@ def create_parcel(parcel: ParcelCreate, db: Session = Depends(get_db)):
 @app.post("/admin/scan")
 def log_scan(event: ScanEventCreate, db: Session = Depends(get_db)):
     try:
-        # Look up parcel info using tracking_id
         parcel = db.query(Parcel).filter_by(tracking_id=event.tracking_id).first()
         if not parcel:
-            raise HTTPException(status_code=404, detail="Parcel not found")
+            raise HTTPException(status_code=404, detail="Tracking ID not found")
 
         scan_record = ScanEvent(
             event_id=str(uuid4()),
@@ -128,7 +127,7 @@ def log_scan(event: ScanEventCreate, db: Session = Depends(get_db)):
             event_ts=event.event_ts,
             facility_region=event.facility_region,
             facility_location=event.facility_location,
-            notes=event.notes,
+            # notes=event.notes,
             account_id=parcel.account_id,
             carrier_id=parcel.carrier_id,
             created_at=datetime.utcnow()
@@ -144,10 +143,11 @@ def log_scan(event: ScanEventCreate, db: Session = Depends(get_db)):
             "message": "Scan event logged"
         }
 
+    except HTTPException as e:
+        raise e  # Let FastAPI handle 404 or 400
     except Exception as e:
-        print(f"❌ Unexpected error in log_scan: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
-
+        print(f"❌ Error logging scan: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected server error")
 
 
 @app.get("/track/{tracking_id}")
@@ -168,7 +168,7 @@ def track_parcel(tracking_id: str, db: Session = Depends(get_db)):
                 "event_ts": scan.event_ts,
                 "facility_region": scan.facility_region,
                 "facility_location": scan.facility_location,
-                "notes": scan.notes
+                # "notes": scan.notes
             }
             for scan in scans
         ]
