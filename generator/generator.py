@@ -306,7 +306,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
 
     # Load or generate accounts & carriers first
     if os.path.exists("./data/accounts.json"):
-        print("⚙️ accounts.json already exists. Skipping generation.")
+        print("accounts.json already exists. Skipping generation.")
         with open("./data/accounts.json", "r") as f:
             accounts = json.load(f)
     else:
@@ -316,7 +316,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
         print("✅ accounts.json generated.")
 
     if os.path.exists("./data/carriers.json"):
-        print("⚙️ carriers.json already exists. Skipping generation.")
+        print("carriers.json already exists. Skipping generation.")
         with open("./data/carriers.json", "r") as f:
             carriers = json.load(f)
     else:
@@ -327,7 +327,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
 
     # Parcels depend on accounts and carriers
     if os.path.exists("./data/parcels.json"):
-        print("⚙️ parcels.json already exists. Skipping generation.")
+        print("parcels.json already exists. Skipping generation.")
         with open("./data/parcels.json", "r") as f:
             parcels = json.load(f)
     else:
@@ -345,7 +345,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
         grouped[p["origin_region"]].append(p)
 
     # Spawn processes
-    print("🚀 Starting regional event producers...")
+    print("Starting regional event producers...")
     procs = []
     for region, subset in grouped.items():
         p = mp.Process(target=produce_region_events, args=(region, subset, events_per_parcel))
@@ -354,7 +354,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
 
     for p in procs:
         p.join()
-    print("🎯 All region producers completed.")
+    print("All region producers completed.")
 
 if __name__ == "__main__":
     run_pipeline(total_parcels=3_000_000, events_per_parcel=10)
