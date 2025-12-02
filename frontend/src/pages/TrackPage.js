@@ -42,7 +42,7 @@ function TrackPage() {
                   {ev.facility_location && (
                     <div className="text-muted">Location: {ev.facility_location}</div>
                   )}
-                  {ev.notes && <div className="fst-italic">{ev.notes}</div>}
+                  {/* {ev.notes && <div className="fst-italic">{ev.notes}</div>} */}
                 </li>
               ))}
             </ul>
@@ -56,7 +56,7 @@ function TrackPage() {
                   <th>Event Type</th>
                   <th>Facility Region</th>
                   <th>Facility Location</th>
-                  <th>Notes</th>
+                  {/* <th>Notes</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -66,7 +66,7 @@ function TrackPage() {
                     <td>{ev.event_type}</td>
                     <td>{ev.facility_region || ev.location}</td>
                     <td>{ev.facility_location || '-'}</td>
-                    <td>{ev.notes || '-'}</td>
+                    {/* <td>{ev.notes || '-'}</td> */}
                   </tr>
                 ))}
               </tbody>

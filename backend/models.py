@@ -62,7 +62,7 @@ class ScanEvent(Base):
     facility_region = Column(String, nullable=False)
     facility_location = Column(String, nullable=True)
     event_type = Column(String, nullable=False)
-    notes = Column(String)
+    # notes = Column(String)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     __table_args__ = (
