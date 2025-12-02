@@ -102,11 +102,11 @@ function ScanPage() {
             onChange={(e) => setScan({ ...scan, facility_location: e.target.value })}
           />
 
-          <input
+          {/* <input
             className="form-control mb-3"
             placeholder="Notes (optional)"
             onChange={(e) => setScan({ ...scan, notes: e.target.value })}
-          />
+          /> */}
           <button className="btn btn-secondary w-100">Submit Scan Event</button>
         </form>
       </div>

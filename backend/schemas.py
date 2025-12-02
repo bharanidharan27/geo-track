@@ -35,7 +35,7 @@ class ScanCreate(BaseModel):
     facility_region: str
     facility_location: Optional[str] = None
     event_type: str
-    notes: Optional[str] = None
+    # notes: Optional[str] = None
     event_ts: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 class ScanEventCreate(BaseModel):
@@ -44,4 +44,4 @@ class ScanEventCreate(BaseModel):
     event_ts: datetime
     facility_region: str
     facility_location: Optional[str] = None
-    notes: Optional[str] = None
+    # notes: Optional[str] = None

@@ -127,7 +127,7 @@ def log_scan(event: ScanEventCreate, db: Session = Depends(get_db)):
             event_ts=event.event_ts,
             facility_region=event.facility_region,
             facility_location=event.facility_location,
-            notes=event.notes,
+            # notes=event.notes,
             account_id=parcel.account_id,
             carrier_id=parcel.carrier_id,
             created_at=datetime.utcnow()
@@ -168,7 +168,7 @@ def track_parcel(tracking_id: str, db: Session = Depends(get_db)):
                 "event_ts": scan.event_ts,
                 "facility_region": scan.facility_region,
                 "facility_location": scan.facility_location,
-                "notes": scan.notes
+                # "notes": scan.notes
             }
             for scan in scans
         ]
