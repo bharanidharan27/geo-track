@@ -43,8 +43,9 @@ Start the DLQ consumer:
 To spin up more consumer instances, open new terminals and run the same commands again for the required region indices.
 
 ## 4. Prometheus and Grafana
-
-(To be filled later.)
+    ./prometheus --config.file=../prometheus.yml
+    
+    brew services start grafana
 
 ## 5. Running the UI
 
