@@ -92,7 +92,7 @@ def run_load():
     conn = psycopg2.connect(COCKROACH_URL)
     print("Connected.")
 
-    for loader in [load_parcels]:
+    for loader in [load_accounts, load_carriers, load_parcels]:
         data, cols, table = loader()
         print(f"Loading {len(data):,} records into {table}...")
         load_table_data(conn, table, tqdm(data, desc=f"{table}"), cols)

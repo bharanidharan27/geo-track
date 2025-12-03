@@ -16,10 +16,33 @@ from utils.geo_config import (
     build_city_route,
     random_region_for_country,
 )
-# from event_producer import send_event, flush
 from seed_generator import generate_accounts, generate_carriers, generate_parcels
 
+import subprocess
+
 fake = Faker()
+
+# ---------------------------------------------------------------------
+#  NEW: Function to call db_loader.py
+# ---------------------------------------------------------------------
+def load_initial_seed_data_to_db():
+    """
+    After generating accounts.json, carriers.json, parcels.json,
+    this will run db_loader.py to load them into CockroachDB.
+    """
+    print("\n Loading initial seed data into CockroachDB via db_loader.py ...")
+
+    script_path = os.path.join(os.path.dirname(__file__), "db_loader.py")
+
+    result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
+
+    print(result.stdout)
+    if result.returncode != 0:
+        print("db_loader.py failed:")
+        print(result.stderr)
+        sys.exit(1)
+
+    print("Seed data loaded into CockroachDB.\n")
 
 def city_from_location(location: str) -> str:
     # "Delhi, IN" -> "Delhi"
@@ -313,7 +336,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
         accounts = generate_accounts()
         with open("./data/accounts.json", "w") as f:
             json.dump(accounts, f)
-        print("✅ accounts.json generated.")
+        print("accounts.json generated.")
 
     if os.path.exists("./data/carriers.json"):
         print("carriers.json already exists. Skipping generation.")
@@ -323,7 +346,7 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
         carriers = generate_carriers()
         with open("./data/carriers.json", "w") as f:
             json.dump(carriers, f)
-        print("✅ carriers.json generated.")
+        print("carriers.json generated.")
 
     # Parcels depend on accounts and carriers
     if os.path.exists("./data/parcels.json"):
@@ -334,9 +357,12 @@ def run_pipeline(total_parcels=3_000_000, events_per_parcel=10):
         parcels = generate_parcels(accounts, carriers, total_parcels)
         with open("./data/parcels.json", "w") as f:
             json.dump(parcels, f)
-        print("✅ parcels.json generated.")
+        print("parcels.json generated.")
 
-    print("✅ Seed data ready for pipeline.")
+    print("Seed data ready for pipeline.")
+
+
+    load_initial_seed_data_to_db()
 
     # Split parcels by region (origin_region → same as scan locality)
     regions = list_supported_regions()
