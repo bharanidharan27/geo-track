@@ -88,17 +88,17 @@ def load_parcels(path="./data/parcels.json"):
     return data, cols, "parcels"
 
 def run_load():
-    print("🌐 Connecting to CockroachDB Cloud...")
+    print("Connecting to CockroachDB Cloud...")
     conn = psycopg2.connect(COCKROACH_URL)
-    print("✅ Connected.")
+    print("Connected.")
 
     for loader in [load_parcels]:
         data, cols, table = loader()
-        print(f"📥 Loading {len(data):,} records into {table}...")
+        print(f"Loading {len(data):,} records into {table}...")
         load_table_data(conn, table, tqdm(data, desc=f"{table}"), cols)
 
     conn.close()
-    print("✅ All tables loaded successfully.")
+    print("All tables loaded successfully.")
 
 if __name__ == "__main__":
     run_load()
