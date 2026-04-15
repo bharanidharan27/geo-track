@@ -1,0 +1,30 @@
+services:
+  crdb-us-west:
+    image: cockroachdb/cockroach:v24.2.0
+    container_name: crdb-us-west
+    command: start --insecure --join=crdb-us-west,crdb-us-east,crdb-us-central --locality=region=us-west
+    ports:
+      - "26267:26267"
+      - "8080:8080"
+    volumes:
+      - ./data/west:/cockroach/cockroach-data
+
+  crdb-us-east:
+    image: cockroachdb/cockroach:v24.2.0
+    container_name: crdb-us-east
+    command: start --insecure --join=crdb-us-west,crdb-us-east,crdb-us-central --locality=region=us-east
+    ports:
+      - "26268:26267"
+      - "8081:8080"
+    volumes:
+      - ./data/east:/cockroach/cockroach-data
+
+  crdb-us-central:
+    image: cockroachdb/cockroach:v24.2.0
+    container_name: crdb-us-central
+    command: start --insecure --join=crdb-us-west,crdb-us-east,crdb-us-central --locality=region=us-central
+    ports:
+      - "26259:26257"
+      - "8082:8080"
+    volumes:
+      - ./data/central:/cockroach/cockroach-data
