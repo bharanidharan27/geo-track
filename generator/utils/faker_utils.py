@@ -6,13 +6,30 @@ from datetime import datetime, timedelta, timezone
 fake = Faker()
 
 regions = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
-event_types = ["handoff", "arrival", "departure", "out_for_delivery", "delivered", "exception", "rts"]
+event_types = [
+    "order_submitted",
+    "label_created",
+    "picked_up",
+    "arrived_origin_hub",
+    "departed_origin_hub",
+    "in_transit",
+    "arrived_destination_hub",
+    "arrived_delivery_station",
+    "out_for_delivery",
+    "delivered",
+    "delay",
+    "exception",
+    "failed_delivery",
+    "rts",
+]
+
 
 def generate_fake_ids(num_accounts=1000, num_carriers=50):
     """Generate reusable fake account and carrier UUIDs."""
     accounts = [str(uuid4()) for _ in range(num_accounts)]
     carriers = [str(uuid4()) for _ in range(num_carriers)]
     return accounts, carriers
+
 
 def generate_scan_event(tracking_id: str, account_id: str, carrier_id: str):
     """Generate one synthetic ScanEvent matching DB schema."""
@@ -22,9 +39,12 @@ def generate_scan_event(tracking_id: str, account_id: str, carrier_id: str):
         "account_id": account_id,
         "carrier_id": carrier_id,
         "tracking_id": tracking_id,
-        "event_ts": (datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 60*24*10))).isoformat(),
+        "event_ts": (datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 60 * 24 * 10))).isoformat(),
         "facility_region": region,
+        "facility_id": f"{region}-demo-facility",
+        "facility_type": "hub",
+        "sequence_no": random.randint(1, 12),
+        "journey_stage": "linehaul",
         "event_type": random.choice(event_types),
-        "notes": fake.sentence(),
     }
     return region, event

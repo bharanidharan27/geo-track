@@ -1,10 +1,42 @@
-from sqlalchemy import Column, String, Boolean, TIMESTAMP, ForeignKey, CheckConstraint, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Integer, String, TIMESTAMP, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+
 from database import Base
 import uuid
 
-# --------------------- Accounts ---------------------
+
+ALLOWED_STATUSES = (
+    "created",
+    "in_transit",
+    "out_for_delivery",
+    "delivered",
+    "exception",
+    "failed_delivery",
+    "rts",
+)
+
+ALLOWED_EVENT_TYPES = (
+    "handoff",
+    "arrival",
+    "departure",
+    "order_submitted",
+    "label_created",
+    "picked_up",
+    "arrived_origin_hub",
+    "departed_origin_hub",
+    "in_transit",
+    "arrived_destination_hub",
+    "arrived_delivery_station",
+    "out_for_delivery",
+    "delivered",
+    "delay",
+    "exception",
+    "failed_delivery",
+    "rts",
+)
+
+
 class Account(Base):
     __tablename__ = "accounts"
 
@@ -16,10 +48,10 @@ class Account(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     __table_args__ = (
-        CheckConstraint("tier IN ('free', 'pro', 'enterprise')", name='tier_check'),
+        CheckConstraint("tier IN ('free', 'pro', 'enterprise')", name="tier_check"),
     )
 
-# --------------------- Carriers ---------------------
+
 class Carrier(Base):
     __tablename__ = "carriers"
 
@@ -30,7 +62,7 @@ class Carrier(Base):
     active = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
-# --------------------- Parcels ---------------------
+
 class Parcel(Base):
     __tablename__ = "parcels"
 
@@ -47,10 +79,13 @@ class Parcel(Base):
     updated_at = Column(TIMESTAMP(timezone=True), onupdate=func.now())
 
     __table_args__ = (
-        CheckConstraint("status IN ('created', 'in_transit', 'out_for_delivery', 'delivered')", name='status_check'),
+        CheckConstraint(
+            "status IN ('created', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'failed_delivery', 'rts')",
+            name="status_check",
+        ),
     )
 
-# --------------------- Scan Events ---------------------
+
 class ScanEvent(Base):
     __tablename__ = "scan_events"
 
@@ -61,14 +96,18 @@ class ScanEvent(Base):
     event_ts = Column(TIMESTAMP(timezone=True), nullable=False)
     facility_region = Column(String, nullable=False)
     facility_location = Column(String, nullable=True)
+    facility_id = Column(String, nullable=True)
+    facility_type = Column(String, nullable=True)
+    sequence_no = Column(Integer, nullable=True)
+    journey_stage = Column(String, nullable=True)
+    event_message = Column(String, nullable=True)
     event_type = Column(String, nullable=False)
-    # notes = Column(String)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     __table_args__ = (
         UniqueConstraint("tracking_id", "event_ts", "event_type", "facility_region", name="dedup_index"),
         CheckConstraint(
-            "event_type IN ('handoff', 'arrival', 'departure', 'out_for_delivery', 'delivered', 'exception', 'rts')",
-            name="event_type_check"
+            "event_type IN ('handoff', 'arrival', 'departure', 'order_submitted', 'label_created', 'picked_up', 'arrived_origin_hub', 'departed_origin_hub', 'in_transit', 'arrived_destination_hub', 'arrived_delivery_station', 'out_for_delivery', 'delivered', 'delay', 'exception', 'failed_delivery', 'rts')",
+            name="event_type_check",
         ),
     )

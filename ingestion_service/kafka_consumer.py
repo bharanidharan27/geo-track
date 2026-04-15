@@ -5,10 +5,15 @@ from dotenv import load_dotenv
 from db.db_utils import insert_scanned_events_batch
 from generator.kafka_dlq_producer import send_to_dlq
 
+try:
+    from generator.utils.logistics_config import get_supported_regions
+except ImportError:
+    from utils.logistics_config import get_supported_regions
+
 # Load environment variables from .env file
 load_dotenv()
 
-KAFKA_TOPIC_LIST = ["aws-us-west-2", "aws-us-east-1", "aws-us-east-2", "aws-ap-south-1", "aws-ap-southeast-1"]
+KAFKA_TOPIC_LIST = get_supported_regions()
 
 consumer = KafkaConsumer(
     bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS"),

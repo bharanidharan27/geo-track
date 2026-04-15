@@ -1,12 +1,53 @@
-from fastapi import FastAPI, HTTPException, Depends
+from datetime import datetime
+from uuid import uuid4
+
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from uuid import uuid4
-from datetime import datetime
 
 from database import SessionLocal, engine
-from models import Base, Account, Carrier, Parcel, ScanEvent
+from models import Account, Base, Carrier, Parcel, ScanEvent
 from schemas import AccountCreate, CarrierCreate, ParcelCreate, ScanEventCreate
+
+EVENT_DISPLAY_NAMES = {
+    "order_submitted": "Order Submitted",
+    "label_created": "Label Created",
+    "picked_up": "Picked Up",
+    "arrived_origin_hub": "Arrived at Origin Hub",
+    "departed_origin_hub": "Departed Origin Hub",
+    "in_transit": "In Transit",
+    "arrived_destination_hub": "Arrived at Destination Hub",
+    "arrived_delivery_station": "Arrived at Delivery Station",
+    "out_for_delivery": "Out for Delivery",
+    "delivered": "Delivered",
+    "delay": "Delayed",
+    "exception": "Exception",
+    "failed_delivery": "Delivery Attempt Failed",
+    "rts": "Return to Sender",
+    "handoff": "Handed Off",
+    "arrival": "Arrival Scan",
+    "departure": "Departure Scan",
+}
+
+STATUS_BY_EVENT_TYPE = {
+    "order_submitted": "created",
+    "label_created": "created",
+    "picked_up": "in_transit",
+    "arrived_origin_hub": "in_transit",
+    "departed_origin_hub": "in_transit",
+    "in_transit": "in_transit",
+    "arrived_destination_hub": "in_transit",
+    "arrived_delivery_station": "in_transit",
+    "out_for_delivery": "out_for_delivery",
+    "delivered": "delivered",
+    "delay": "exception",
+    "exception": "exception",
+    "failed_delivery": "failed_delivery",
+    "rts": "rts",
+    "handoff": "in_transit",
+    "arrival": "in_transit",
+    "departure": "in_transit",
+}
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,13 +61,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# DB Session Dependency
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def humanize_event_type(event_type: str) -> str:
+    return EVENT_DISPLAY_NAMES.get(event_type, event_type.replace("_", " ").title())
+
+
+def parcel_status_from_event(event_type: str) -> str:
+    return STATUS_BY_EVENT_TYPE.get(event_type, "in_transit")
 
 
 @app.post("/admin/accounts")
@@ -41,7 +90,7 @@ def create_account(account: AccountCreate, db: Session = Depends(get_db)):
     return {
         "status": "success",
         "account_id": str(new_account.id),
-        "message": "Account successfully created"
+        "message": "Account successfully created",
     }
 
 
@@ -52,7 +101,7 @@ def create_carrier(carrier: CarrierCreate, db: Session = Depends(get_db)):
         return {
             "status": "exists",
             "carrier_id": str(existing.id),
-            "message": "Carrier with this SCAC already exists"
+            "message": "Carrier with this SCAC already exists",
         }
 
     new_carrier = Carrier(
@@ -68,86 +117,74 @@ def create_carrier(carrier: CarrierCreate, db: Session = Depends(get_db)):
     return {
         "status": "success",
         "carrier_id": str(new_carrier.id),
-        "message": "Carrier successfully created"
+        "message": "Carrier successfully created",
     }
-
 
 
 @app.post("/admin/parcel")
 def create_parcel(parcel: ParcelCreate, db: Session = Depends(get_db)):
-    try:
-        print(f"🔍 Incoming Parcel Data: {parcel}")
+    existing = db.query(Parcel).filter_by(tracking_id=parcel.tracking_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Parcel already exists")
 
-        existing = db.query(Parcel).filter_by(tracking_id=parcel.tracking_id).first()
-        if existing:
-            raise HTTPException(status_code=400, detail="Parcel already exists")
+    new_parcel = Parcel(
+        tracking_id=parcel.tracking_id,
+        account_id=parcel.account_id,
+        carrier_id=parcel.carrier_id,
+        origin_region=parcel.origin_region,
+        destination_region=parcel.destination_region,
+        source_location=parcel.source_location,
+        destination_location=parcel.destination_location,
+        status="created",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(new_parcel)
+    db.commit()
+    db.refresh(new_parcel)
 
-        new_parcel = Parcel(
-            tracking_id=parcel.tracking_id,
-            account_id=parcel.account_id,
-            carrier_id=parcel.carrier_id,
-            origin_region=parcel.origin_region,
-            destination_region=parcel.destination_region,
-            source_location=parcel.source_location,
-            destination_location=parcel.destination_location,
-            status="created",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-        db.add(new_parcel)
-        db.commit()
-        db.refresh(new_parcel)
-
-        return {
-            "status": "success",
-            "tracking_id": new_parcel.tracking_id,
-            "message": "Parcel created"
-        }
-
-    except HTTPException as e:
-        print(f"❌ Error in create_parcel: {e.status_code}: {e.detail}")
-        raise e  # re-raise to allow FastAPI to handle it
-
-    except Exception as e:
-        print(f"❌ Unexpected error in create_parcel: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return {
+        "status": "success",
+        "tracking_id": new_parcel.tracking_id,
+        "message": "Parcel created",
+    }
 
 
 @app.post("/admin/scan")
 def log_scan(event: ScanEventCreate, db: Session = Depends(get_db)):
-    try:
-        parcel = db.query(Parcel).filter_by(tracking_id=event.tracking_id).first()
-        if not parcel:
-            raise HTTPException(status_code=404, detail="Tracking ID not found")
+    parcel = db.query(Parcel).filter_by(tracking_id=event.tracking_id).first()
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Tracking ID not found")
 
-        scan_record = ScanEvent(
-            event_id=str(uuid4()),
-            tracking_id=event.tracking_id,
-            event_type=event.event_type,
-            event_ts=event.event_ts,
-            facility_region=event.facility_region,
-            facility_location=event.facility_location,
-            # notes=event.notes,
-            account_id=parcel.account_id,
-            carrier_id=parcel.carrier_id,
-            created_at=datetime.utcnow()
-        )
+    scan_record = ScanEvent(
+        event_id=uuid4(),
+        tracking_id=event.tracking_id,
+        event_type=event.event_type,
+        event_ts=event.event_ts,
+        facility_region=event.facility_region,
+        facility_location=event.facility_location,
+        facility_id=event.facility_id,
+        facility_type=event.facility_type,
+        sequence_no=event.sequence_no,
+        journey_stage=event.journey_stage,
+        event_message=event.event_message,
+        account_id=parcel.account_id,
+        carrier_id=parcel.carrier_id,
+        created_at=datetime.utcnow(),
+    )
 
-        db.add(scan_record)
-        db.commit()
-        db.refresh(scan_record)
+    db.add(scan_record)
+    parcel.status = parcel_status_from_event(event.event_type)
+    parcel.last_event_ts = event.event_ts
+    parcel.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(scan_record)
 
-        return {
-            "status": "success",
-            "event_id": scan_record.event_id,
-            "message": "Scan event logged"
-        }
-
-    except HTTPException as e:
-        raise e  # Let FastAPI handle 404 or 400
-    except Exception as e:
-        print(f"❌ Error logging scan: {e}")
-        raise HTTPException(status_code=500, detail="Unexpected server error")
+    return {
+        "status": "success",
+        "event_id": scan_record.event_id,
+        "message": "Scan event logged",
+    }
 
 
 @app.get("/track/{tracking_id}")
@@ -157,19 +194,29 @@ def track_parcel(tracking_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Parcel not found")
 
     scans = db.query(ScanEvent).filter_by(tracking_id=tracking_id).order_by(ScanEvent.event_ts).all()
+    latest_status = parcel.status
+    if scans:
+        latest_status = parcel_status_from_event(scans[-1].event_type)
 
     return {
         "tracking_id": tracking_id,
-        "status": parcel.status,
+        "status": latest_status,
         "region": parcel.destination_region,
+        "source_location": parcel.source_location,
+        "destination_location": parcel.destination_location,
         "history": [
             {
                 "event_type": scan.event_type,
+                "event_label": humanize_event_type(scan.event_type),
                 "event_ts": scan.event_ts,
                 "facility_region": scan.facility_region,
                 "facility_location": scan.facility_location,
-                # "notes": scan.notes
+                "facility_id": scan.facility_id,
+                "facility_type": scan.facility_type,
+                "sequence_no": scan.sequence_no,
+                "journey_stage": scan.journey_stage,
+                "event_message": scan.event_message,
             }
             for scan in scans
-        ]
+        ],
     }
